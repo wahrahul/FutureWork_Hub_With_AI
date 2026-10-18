@@ -1,0 +1,150 @@
+<mat-sidenav-container class="app-shell theme-{{ mood().mood }}" [hasBackdrop]="mobileViewport">
+  <mat-sidenav class="sidebar" [mode]="mobileViewport ? 'over' : 'side'" [(opened)]="sideNavOpened" aria-label="Workspace navigation">
+    <a class="brand" href="#today" (click)="$event.preventDefault(); selectSection('dashboard')">
+      <span class="brand-mark"><mat-icon>hub</mat-icon></span>
+      <span class="brand-copy"><strong>FutureWork_Hub_With_AI</strong><small>work, in rhythm</small></span>
+    </a>
+
+    <div class="side-label">Workspace</div>
+    <mat-nav-list class="main-nav" aria-label="Main navigation">
+      @for (item of sections; track item.id) {
+        <button mat-list-item type="button" class="nav-item" [class.is-active]="activeSection() === item.id" [attr.aria-current]="activeSection() === item.id ? 'page' : null" (click)="selectSection(item.id)">
+          <mat-icon matListItemIcon>{{ item.icon }}</mat-icon><span matListItemTitle>{{ item.label }}</span>
+        </button>
+      }
+    </mat-nav-list>
+
+    <div class="sidebar-spacer"></div>
+    <section class="privacy-note">
+      <span class="privacy-dot"></span>
+      <div><strong>Your space stays yours</strong><p>Work stays on this device unless you choose Gemini.</p></div>
+    </section>
+    <button mat-button type="button" class="clear-button" matTooltip="Remove this app's saved data from this device" (click)="clearLocalData()"><mat-icon>delete_sweep</mat-icon>Clear local data</button>
+    <div class="sidebar-foot">FUTUREWORK HUB <span>·</span> 01</div>
+  </mat-sidenav>
+
+  <mat-sidenav-content class="main-area">
+    <mat-toolbar class="topbar" role="banner">
+      <button mat-icon-button type="button" class="nav-toggle" [matTooltip]="mobileViewport ? 'Open navigation' : 'Close navigation'" [attr.aria-label]="mobileViewport ? 'Open navigation' : 'Close navigation'" [attr.aria-expanded]="sideNavOpened" (click)="toggleNavigation()"><mat-icon>menu</mat-icon></button>
+      <strong class="toolbar-title">FutureWork_Hub_With_AI</strong>
+      <div class="breadcrumb"><span>YOUR WORKSPACE</span><span class="breadcrumb-slash">/</span><strong>{{ sections.find(item => item.id === activeSection())?.label }}</strong></div>
+      <div class="topbar-actions">
+        <span class="date-label">{{ todayLabel }}</span>
+        <button mat-stroked-button type="button" class="mood-pill" [matTooltip]="'Current mood: ' + mood().mood" (click)="selectSection('mood')" [attr.aria-label]="'Current mood: ' + mood().mood">
+          <span>{{ moodBadge() }}</span><span>{{ mood().mood }}</span>
+        </button>
+        <button mat-icon-button type="button" class="key-settings-trigger" aria-label="Gemini settings" matTooltip="Gemini settings" (click)="openGeminiSettings()"><mat-icon>auto_awesome</mat-icon></button>
+      </div>
+    </mat-toolbar>
+
+    @if (feedback()) { <div class="feedback-banner" role="status">{{ feedback() }}<button type="button" aria-label="Dismiss" (click)="feedback.set('')">×</button></div> }
+
+    <div class="page-content" [class.mood-page-content]="activeSection() === 'mood'">
+      @if (activeSection() === 'dashboard') {
+        <section class="page-intro">
+          <div><div class="eyebrow">{{ todayLabel }} <span>·</span> A little more room to think</div><h1>Make space for<br /><em>meaningful work.</em></h1></div>
+          <p class="intro-aside">A quieter view of your day, shaped around the way you feel and the work that matters.</p>
+        </section>
+
+        <section class="overview-grid" aria-label="Today's overview">
+          <mat-card appearance="outlined" class="metric-block metric-primary"><mat-card-content><span class="metric-label">IN YOUR QUEUE</span><strong>{{ openTasks().length.toString().padStart(2, '0') }}</strong><span class="metric-foot">{{ completedTasks() }} completed today</span></mat-card-content></mat-card>
+          <mat-card appearance="outlined" class="metric-block"><mat-card-content><span class="metric-label">MOOD SCORE</span><strong>{{ mood().score }}<small>/100</small></strong><span class="metric-foot">A gentle check-in, not a grade</span></mat-card-content></mat-card>
+          <mat-card appearance="outlined" class="metric-block metric-break"><mat-card-content><span class="metric-label">TAKE A BREATH</span><strong>05<small>min</small></strong><button mat-button type="button" color="primary" (click)="selectSection('wellbeing')">Plan a reset <mat-icon>arrow_forward</mat-icon></button></mat-card-content></mat-card>
+        </section>
+
+        <section class="dashboard-columns">
+          <mat-card appearance="outlined" class="work-panel dashboard-widget">
+            <mat-card-header class="dashboard-card-header"><mat-icon mat-card-avatar>task_alt</mat-icon><mat-card-title>Today's focus</mat-card-title><mat-card-subtitle>{{ openTasks().length }} open · {{ completedTasks() }} complete</mat-card-subtitle><button mat-button type="button" color="primary" (click)="selectSection('tasks')">All tasks</button></mat-card-header>
+            <mat-card-content>
+            <div class="task-list compact-list">
+              @for (task of openTasks().slice(0, 4); track task.id) {
+                <div class="task-row"><button mat-icon-button type="button" class="task-check" [attr.aria-label]="'Complete ' + task.title" matTooltip="Complete task" (click)="taskState.toggle(task.id)"><mat-icon>check</mat-icon></button><div class="task-copy"><strong>{{ task.title }}</strong><small>{{ task.project }}</small></div><span class="priority-dot priority-{{ task.priority }}" [matTooltip]="task.priority + ' priority'"></span></div>
+              } @empty { <p class="empty-state">Your task list is clear. Keep it that way, or add a new focus.</p> }
+            </div>
+            </mat-card-content>
+            <mat-card-actions align="end"><button mat-button type="button" color="primary" (click)="selectSection('tasks')"><mat-icon>add</mat-icon>Add a task</button></mat-card-actions>
+          </mat-card>
+          <mat-card appearance="outlined" class="mood-chart-panel dashboard-widget">
+            <mat-card-header class="dashboard-card-header"><mat-icon mat-card-avatar>monitor_heart</mat-icon><mat-card-title>Mood detection</mat-card-title><mat-card-subtitle>Recent check-in rhythm</mat-card-subtitle><button mat-button type="button" color="primary" (click)="selectSection('mood')">Check in</button></mat-card-header>
+            <mat-card-content>
+            <div class="chart-wrap" role="img" aria-label="Recent mood check-in scores">
+              <canvas #moodChart aria-label="Mood score trend over recent check-ins"></canvas>
+            </div>
+            <div class="chart-foot"><span><i class="legend-dot"></i> Mood check-ins</span><span>{{ mood().mood }} right now</span></div>
+            </mat-card-content>
+          </mat-card>
+        </section>
+
+        <section class="dashboard-feature-grid" aria-label="Workspace modules">
+          <mat-card appearance="outlined" class="dashboard-widget feature-widget"><mat-card-header class="dashboard-card-header"><mat-icon mat-card-avatar>groups</mat-icon><mat-card-title>Meeting notes</mat-card-title><mat-card-subtitle>{{ meetings().length }} saved</mat-card-subtitle></mat-card-header><mat-card-content>@if (meetings().length) {<strong class="preview-title">{{ meetings()[0].title }}</strong><p class="preview-copy">{{ meetings()[0].summary }}</p>} @else {<p class="preview-copy">Turn a rough meeting recap into a summary and action list.</p>}</mat-card-content><mat-card-actions align="end"><button mat-button type="button" color="primary" (click)="selectSection('meetings')">Open notes <mat-icon>arrow_forward</mat-icon></button></mat-card-actions></mat-card>
+          <mat-card appearance="outlined" class="dashboard-widget feature-widget"><mat-card-header class="dashboard-card-header"><mat-icon mat-card-avatar>self_improvement</mat-icon><mat-card-title>Wellbeing</mat-card-title><mat-card-subtitle>Make room to reset</mat-card-subtitle></mat-card-header><mat-card-content><strong class="preview-title">{{ mood().mood | titlecase }} · {{ mood().score }} points</strong><p class="preview-copy">A short pause can make the next task feel more manageable.</p></mat-card-content><mat-card-actions align="end"><button mat-button type="button" color="primary" (click)="selectSection('wellbeing')">Open timer <mat-icon>arrow_forward</mat-icon></button></mat-card-actions></mat-card>
+          <mat-card appearance="outlined" class="dashboard-widget feature-widget"><mat-card-header class="dashboard-card-header"><mat-icon mat-card-avatar>search</mat-icon><mat-card-title>Knowledge hub</mat-card-title><mat-card-subtitle>Find a saved detail</mat-card-subtitle></mat-card-header><mat-card-content><mat-form-field appearance="outline" class="dashboard-search-field"><mat-label>Search tasks and notes</mat-label><input matInput name="dashboardSearch" [(ngModel)]="queryDraft" (keydown.enter)="searchKnowledge(); selectSection('knowledge')" /><mat-icon matSuffix>search</mat-icon></mat-form-field></mat-card-content><mat-card-actions align="end"><button mat-button type="button" color="primary" [disabled]="!queryDraft.trim()" (click)="searchKnowledge(); selectSection('knowledge')">Search <mat-icon>arrow_forward</mat-icon></button></mat-card-actions></mat-card>
+        </section>
+
+        <section class="bottom-strip">
+          <div class="strip-mark">✳</div><div><span class="eyebrow">A SMALL REMINDER</span><p>Progress is allowed to have a softer pace.</p></div><button mat-button color="primary" type="button" (click)="selectSection('wellbeing')">Take five <mat-icon>arrow_forward</mat-icon></button>
+        </section>
+      }
+
+      @if (activeSection() === 'mood') {
+        <section class="page-intro compact-intro"><div><div class="eyebrow">NOTICE WHAT YOU NEED</div><h1>Check in with<br /><em>yourself.</em></h1></div><p class="intro-aside">A private moment to name how work feels. You can skip any signal.</p></section>
+        <section class="content-grid mood-layout">
+          <mat-card appearance="outlined" class="work-panel mood-check-panel"><mat-card-header><mat-card-title>How are you arriving?</mat-card-title><mat-card-subtitle>Choose what feels closest</mat-card-subtitle></mat-card-header><mat-card-content>
+            <div class="mood-options" role="group" aria-label="Select your mood">
+              <button mat-stroked-button type="button" class="mood-option calm-option" [class.selected]="mood().mood === 'calm'" (click)="setMood('calm')"><span class="mood-option-icon">🌊</span><span class="mood-option-copy"><strong>Calm</strong><small>Steady & clear</small></span></button>
+              <button mat-stroked-button type="button" class="mood-option stressed-option" [class.selected]="mood().mood === 'stressed'" (click)="setMood('stressed')"><span class="mood-option-icon">🔥</span><span class="mood-option-copy"><strong>Stressed</strong><small>A lot at once</small></span></button>
+              <button mat-stroked-button type="button" class="mood-option energetic-option" [class.selected]="mood().mood === 'energetic'" (click)="setMood('energetic')"><span class="mood-option-icon">⚡</span><span class="mood-option-copy"><strong>Energetic</strong><small>Ready to move</small></span></button>
+              <button mat-stroked-button type="button" class="mood-option curious-option" [class.selected]="mood().mood === 'curious'" (click)="setMood('curious')"><span class="mood-option-icon"><mat-icon>explore</mat-icon></span><span class="mood-option-copy"><strong>Curious</strong><small>Open to explore</small></span></button>
+            </div>
+            <mat-form-field appearance="outline" class="full-width-field"><mat-label>Or describe it in a few words</mat-label><textarea matInput id="mood-text" [(ngModel)]="moodDraft" placeholder="What's taking up space in your mind?" rows="2"></textarea></mat-form-field>
+            <div class="form-actions"><span class="privacy-inline">Private by default · not a clinical assessment</span><button mat-flat-button color="primary" type="button" [disabled]="busy || !moodDraft.trim()" (click)="inferMood()">{{ busy ? 'Listening…' : 'Reflect with AI' }} <mat-icon>arrow_forward</mat-icon></button></div>
+          </mat-card-content></mat-card>
+          <mat-card appearance="outlined" class="side-insight"><mat-card-header><mat-card-title>Your latest signal</mat-card-title><mat-card-subtitle>Personal cue, not a grade</mat-card-subtitle></mat-card-header><mat-card-content><div class="mood-score">{{ mood().score }}<small>/100</small></div><strong>{{ mood().mood | titlecase }}</strong><p>{{ mood().source === 'typing' ? 'Suggested by typing rhythm.' : mood().source === 'camera' ? 'Suggested by an on-device face cue.' : mood().source === 'voice' ? 'Suggested by speech language cues.' : mood().source === 'text' ? 'Suggested by your written reflection.' : 'A small signal to help shape your day.' }}</p><div class="insight-rule"></div><span class="eyebrow">TYPING RHYTHM</span><div class="pace-value">{{ typingWordsPerMinute || '—' }} <small>wpm</small></div><p>Only cadence is measured. Typed content is never retained for this signal.</p></mat-card-content></mat-card>
+        </section>
+        <mat-card appearance="outlined" class="auto-signals-card"><mat-card-header><mat-card-title>Automatic mood signals</mat-card-title><mat-card-subtitle>Optional cues; you stay in control</mat-card-subtitle></mat-card-header><mat-card-content><div class="auto-signal"><mat-checkbox color="primary" [checked]="typingDetectionEnabled" (change)="toggleTypingDetection($event.checked)">Typing rhythm</mat-checkbox><p>Timing only; typed words are not collected.</p></div><div class="auto-signal"><mat-checkbox color="primary" [checked]="cameraEnabled" (change)="toggleCamera($event.checked)">Face expression</mat-checkbox><p>Estimated on-device; frames are not saved or uploaded.</p></div><div class="auto-signal"><mat-checkbox color="primary" [checked]="voiceDetectionEnabled" (change)="toggleVoiceDetection($event.checked)">Voice language cues</mat-checkbox><p>Speech recognition may send audio to its provider; only temporary text is analyzed.</p><span class="voice-status" role="status">{{ voiceStatus }}</span></div><p class="signal-note">Rough cues, not diagnoses. Manual check-ins take priority.</p></mat-card-content></mat-card>
+        @if (cameraEnabled) {<mat-card appearance="outlined" class="camera-section"><div class="camera-copy"><mat-card-header><mat-card-title>Camera preview</mat-card-title><mat-card-subtitle>Local estimate about every 15 seconds</mat-card-subtitle></mat-card-header><p>Expression cues are approximate and can be wrong.</p><small class="privacy-inline">The first model load may need an internet connection.</small></div><video #cameraView autoplay muted playsinline [hidden]="!cameraLive"></video>@if (cameraLive) {<button mat-stroked-button color="primary" type="button" [disabled]="busy" (click)="analyzeCamera()">Check now <mat-icon>refresh</mat-icon></button>}</mat-card>}
+      }
+
+      @if (activeSection() === 'tasks') {
+        <section class="page-intro compact-intro"><div><div class="eyebrow">PROJECTS, WITHOUT THE NOISE</div><h1>Choose the next<br /><em>right thing.</em></h1></div><p class="intro-aside">Keep the list small, make the priorities visible, and let the rest wait.</p></section>
+        <mat-card appearance="outlined" class="work-panel task-manager"><mat-card-header><mat-card-title>Your task list</mat-card-title><mat-card-subtitle>{{ openTasks().length }} open · {{ completedTasks() }} complete</mat-card-subtitle><button mat-stroked-button color="primary" type="button" [disabled]="busy || !openTasks().length" (click)="prioritizeTasks()"><mat-icon>auto_awesome</mat-icon>{{ busy ? 'Thinking…' : 'Prioritize with AI' }}</button></mat-card-header>
+          <form class="task-entry" (ngSubmit)="addTask()">
+            <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Task title</mat-label><input matInput name="taskTitle" [(ngModel)]="taskDraft" placeholder="What needs your attention?" /></mat-form-field>
+            <mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Project</mat-label><mat-select name="projectName" [(ngModel)]="projectDraft">@for (project of projects(); track project.id) {<mat-option [value]="project.name">{{ project.name }}</mat-option>}</mat-select></mat-form-field>
+            <button mat-flat-button color="primary" type="submit" [disabled]="!taskDraft.trim()"><mat-icon>add</mat-icon>Add task</button>
+          </form>
+          <div class="task-list full-list">@for (task of tasks(); track task.id) {
+            <div class="task-row" [class.task-done]="task.done">
+              <button mat-icon-button type="button" class="task-check" [class.checked]="task.done" [attr.aria-label]="task.done ? 'Reopen ' + task.title : 'Complete ' + task.title" [matTooltip]="task.done ? 'Reopen task' : 'Complete task'" (click)="taskState.toggle(task.id)"><mat-icon>{{ task.done ? 'check_circle' : 'radio_button_unchecked' }}</mat-icon></button>
+              <div class="task-copy">@if (editingTaskId === task.id) {
+                <div class="task-edit-fields"><mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Task title</mat-label><input matInput [name]="'edit-title-' + task.id" [(ngModel)]="taskEditTitle" /></mat-form-field><mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Project</mat-label><mat-select [name]="'edit-project-' + task.id" [(ngModel)]="taskEditProject">@for (project of projects(); track project.id) {<mat-option [value]="project.name">{{ project.name }}</mat-option>}</mat-select></mat-form-field></div>
+              } @else {<strong>{{ task.title }}</strong><small>{{ task.project }}</small>}</div>
+              <span class="priority-tag priority-{{ task.priority }}">{{ task.priority }}</span>
+              @if (editingTaskId === task.id) {<button mat-icon-button type="button" [attr.aria-label]="'Save ' + taskEditTitle" matTooltip="Save task" (click)="saveTaskEdit(task.id)"><mat-icon>save</mat-icon></button>} @else {<button mat-icon-button type="button" [attr.aria-label]="'Edit ' + task.title" matTooltip="Edit task" (click)="beginTaskEdit(task)"><mat-icon>edit</mat-icon></button>}
+              <button mat-icon-button type="button" [attr.aria-label]="'Delete ' + task.title" matTooltip="Delete task" (click)="taskState.remove(task.id)"><mat-icon>delete_outline</mat-icon></button>
+            </div>
+          } @empty {<p class="empty-state">Nothing on the list yet. Add the first thing you want to move forward.</p>}</div>
+        </mat-card>
+        <mat-card appearance="outlined" class="project-manager"><mat-card-header><mat-card-title>Projects</mat-card-title><mat-card-subtitle>Keep work in context</mat-card-subtitle><form class="project-entry" (ngSubmit)="addProject()"><mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Project name</mat-label><input matInput name="newProject" [(ngModel)]="projectNameDraft" /></mat-form-field><button mat-stroked-button color="primary" type="submit" [disabled]="!projectNameDraft.trim()"><mat-icon>add</mat-icon>Add project</button></form></mat-card-header><mat-card-content><div class="project-list">@for (project of projects(); track project.id) {<div class="project-row">@if (editingProjectId === project.id) {<mat-form-field appearance="outline" subscriptSizing="dynamic"><mat-label>Rename project</mat-label><input matInput [name]="'rename-project-' + project.id" [(ngModel)]="projectEditName" /></mat-form-field>} @else {<strong>{{ project.name }}</strong>}<span>{{ countProjectTasks(project.name) }} tasks</span><div class="project-actions">@if (editingProjectId === project.id) {<button mat-button type="button" (click)="saveProjectEdit(project.id)">Save</button>} @else {<button mat-icon-button type="button" [attr.aria-label]="'Rename ' + project.name" matTooltip="Rename project" (click)="beginProjectEdit(project)"><mat-icon>edit</mat-icon></button>}@if (project.name !== 'Personal') {<button mat-icon-button type="button" [attr.aria-label]="'Delete project ' + project.name" matTooltip="Delete project" (click)="taskState.removeProject(project.id)"><mat-icon>delete_outline</mat-icon></button>}</div></div>}</div></mat-card-content></mat-card>
+      }
+
+      @if (activeSection() === 'meetings') {
+        <section class="page-intro compact-intro"><div><div class="eyebrow">LESS NOTE-TAKING, MORE LISTENING</div><h1>Keep the thread<br /><em>of the conversation.</em></h1></div><p class="intro-aside">Paste a rough summary. Get the key decisions and next steps back, saved right here.</p></section>
+        <section class="content-grid meeting-layout"><mat-card appearance="outlined" class="work-panel"><mat-card-header><mat-card-title>New meeting note</mat-card-title><mat-card-subtitle>Turn the rough notes into a useful record</mat-card-subtitle></mat-card-header><mat-card-content><mat-form-field appearance="outline" class="full-width-field"><mat-label>Meeting summary or transcript</mat-label><textarea matInput id="meeting-text" [(ngModel)]="meetingDraft" rows="8" placeholder="Drop in the rough notes, decisions, and follow-ups…"></textarea></mat-form-field></mat-card-content><mat-card-actions align="end"><span class="privacy-inline">Saved only on this device</span><button mat-flat-button color="primary" type="button" [disabled]="busy || !meetingDraft.trim()" (click)="saveMeeting()">{{ busy ? 'Organizing…' : 'Summarize & save' }} <mat-icon>arrow_forward</mat-icon></button></mat-card-actions></mat-card><aside class="meeting-history"><span class="eyebrow">RECENT CONVERSATIONS</span>@for (note of meetings(); track note.id) {<mat-card appearance="outlined" class="meeting-note"><mat-card-header><mat-card-title>{{ note.title }}</mat-card-title><mat-card-subtitle>{{ note.createdAt | date: 'MMM d · h:mm a' }}</mat-card-subtitle><button mat-icon-button type="button" [attr.aria-label]="'Delete ' + note.title" matTooltip="Delete meeting note" (click)="meetingState.remove(note.id)"><mat-icon>delete_outline</mat-icon></button></mat-card-header><mat-card-content><p>{{ note.summary }}</p>@if (note.actions.length) {<div class="action-list"><span class="eyebrow">NEXT STEPS</span>@for (action of note.actions; track $index) {<div><i></i>{{ action }}</div>}</div>}</mat-card-content></mat-card>} @empty {<p class="empty-state">Saved notes will appear here.</p>}</aside></section>
+      }
+
+      @if (activeSection() === 'wellbeing') {
+        <section class="page-intro compact-intro"><div><div class="eyebrow">SUSTAINABLE BY DESIGN</div><h1>Protect your<br /><em>attention.</em></h1></div><p class="intro-aside">Small resets are part of the work. Choose a timer that helps you return with more room.</p></section>
+        <section class="wellbeing-grid"><mat-card appearance="outlined" class="timer-panel"><mat-card-header class="dashboard-card-header"><mat-icon mat-card-avatar>timer</mat-icon><mat-card-title>Focus timer</mat-card-title><mat-card-subtitle>One thing at a time</mat-card-subtitle></mat-card-header><mat-card-content><div class="timer-ring"><span>{{ timerRunning ? timerDisplay : '25:00' }}</span><small>{{ timerRunning ? 'A quiet stretch' : 'One thing at a time' }}</small></div></mat-card-content><mat-card-actions><button mat-flat-button color="primary" type="button" (click)="timerRunning ? stopTimer() : startTimer(25)">{{ timerRunning ? 'Pause timer' : 'Start focus' }} <mat-icon>{{ timerRunning ? 'pause' : 'play_arrow' }}</mat-icon></button><button mat-stroked-button color="primary" type="button" (click)="startTimer(5)">Take a 5-minute reset</button></mat-card-actions></mat-card><mat-card appearance="outlined" class="wellbeing-note"><mat-card-header><mat-card-title>{{ mood().mood === 'stressed' ? 'Make the next step smaller.' : 'Keep a little space between things.' }}</mat-card-title><mat-card-subtitle>A signal, not a scorecard</mat-card-subtitle></mat-card-header><mat-card-content><p>{{ mood().mood === 'stressed' ? 'Your check-in suggests the day may feel full. Try one small task, then step away for a few minutes.' : 'Your mood score is a personal reflection, not a performance measure. A short pause can protect your focus.' }}</p>@if (typingFatigueCue) {<p class="fatigue-notice">Your typing pace is currently low. If it feels right, take a short reset.</p>}</mat-card-content><mat-card-actions><button mat-button color="primary" type="button" (click)="selectSection('mood')">Update your check-in <mat-icon>arrow_forward</mat-icon></button></mat-card-actions></mat-card></section>
+        <section class="wellbeing-foot"><span class="eyebrow">A GOOD RESET CAN BE SIMPLE</span><div class="reset-ideas"><span>Look away from the screen</span><span>Get a glass of water</span><span>Take the long way back</span></div></section>
+      }
+
+      @if (activeSection() === 'knowledge') {
+        <section class="page-intro compact-intro"><div><div class="eyebrow">YOUR WORK, CONNECTED</div><h1>Find the useful<br /><em>thing you forgot.</em></h1></div><p class="intro-aside">Search across your saved tasks and meeting notes. Results stay local unless Gemini is connected.</p></section>
+        <mat-card appearance="outlined" class="knowledge-search"><form class="search-form" (ngSubmit)="searchKnowledge()"><mat-form-field appearance="outline" class="knowledge-search-field"><mat-label>Search your workspace</mat-label><input matInput aria-label="Search your workspace" name="knowledgeQuery" [(ngModel)]="queryDraft" placeholder="Try the prototype decision or what's next" /><mat-icon matSuffix>search</mat-icon></mat-form-field><button mat-flat-button color="primary" type="submit" [disabled]="busy || !queryDraft.trim()">{{ busy ? 'Searching…' : 'Search' }} <mat-icon>arrow_forward</mat-icon></button></form>@if (recentSearches().length) {<div class="recent-searches"><span class="eyebrow">RECENT</span>@for (query of recentSearches(); track query) {<button mat-button type="button" (click)="searchKnowledge(query)">{{ query }}</button>}</div>}</mat-card>
+        <mat-card appearance="outlined" class="search-results"><mat-card-header><mat-card-title>{{ results().length ? 'Worth a look' : 'Your results will land here' }}</mat-card-title><mat-card-subtitle>{{ mood().mood === 'stressed' ? 'A shorter list' : 'From your workspace' }}</mat-card-subtitle>@if (results().length) {<span class="result-count">{{ results().length }} FOUND</span>}</mat-card-header><mat-card-content>@for (result of results(); track result.title + result.kind) {<article class="result-row"><span class="result-kind">{{ result.kind === 'task' ? 'TASK' : 'MEETING' }}</span><div><h3>{{ result.title }}</h3><p>{{ result.detail }}</p></div><span class="result-arrow" aria-hidden="true"><mat-icon>arrow_forward</mat-icon></span></article>} @empty {<p class="empty-state">Search your saved tasks and meeting notes to pick up where you left off.</p>}</mat-card-content></mat-card>
+      }
+    </div>
+    <footer class="page-footer"><span>FUTUREWORK HUB</span><span>Private by default <i>·</i> Built for human pace</span></footer>
+  </mat-sidenav-content>
+</mat-sidenav-container>
